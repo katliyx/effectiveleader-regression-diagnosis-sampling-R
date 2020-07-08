@@ -1,0 +1,351 @@
+---
+title: "What Makes an Effective Leader?"
+subtitle: "Assignment 2"
+author: "Katherine Li"
+date: "11/13/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+## Prompt
+Why are some people seen as effective leaders and others are not? Are there any behaviors or characteristics that can help us quantify what an effective leader looks like? 
+
+
+## The Data
+The data that we are using is available in the "data" folder and is called: teamPerc.RData.
+
+It comes from a large survey of employees and their direct manager (i.e., each leader provided self-ratings and their direct subordinates provided rating about the leader -- this is reflected by the `Rater` variable). We are most interested in subordinate ratings. This data contains individual items and the scale score for those items. The scale are hierarchical and are constructed as follows:
+
+The *forceful* scale contains the following subscales: takesCharge, declares, pushes
+
+The *enabling* scale contains the following subscales: empowers, listens, supports
+
+The *strategic* scale contains the following subscales: direction, growth, innovation
+
+The *operational* scale contains the following subscales: execution, efficiency, order
+
+There are also a number of demographic variables within this data (e.g., age, experience, gender, tenure). 
+
+The main goal is explain the *effect* variable. You can use individual items, scale subscores, and/or scale scores. 
+
+
+*Load the data.*
+```{r}
+
+load("C:/Users/liyxk/OneDrive/Documents/FALL2019/Mod 2/ITAO70200-AdvancedStatisticalInference/Homework/Assignment 2/teamPerc.RData")
+
+```
+
+
+
+### Bronze
+After examining the variables within the given data, generate at least 3 testable hypotheses; these should be generated before any visual exploration. 
+
+**Hypothesis I**
+
+*H0: Whether doing better in efficiency or not does not have an impact on a leader's effectiveness.*
+
+*H1: A leader is considered to be more effective if he/she does better in efficiency.* 
+
+**Hypothesis II**
+
+*H0: Whether doing better in innovation or not does not have an impact on a leader's effectiveness.*
+
+*H1: A leader is considered to be more effective if he/she does better in innovation.* 
+
+**Hypothesis III**
+
+*H0: Whether doing better in supporting or not does not have an impact on a leader's effectiveness.*
+
+*H1: A leader is considered to be more effective if he/she does better in supporting.*
+
+Conduct an *a prior* power analysis and determine the sample size needed for the effect size you would expect to achieve -- be conservative in your estimates. Without previous knowledge or research, you will have to think before just picking a number here. Remember that you will need to use the $f^2$ value and it can be calculated as:
+
+$$f^2 = \frac{R^2_{adjusted}}{1 - R^2_{adjusted}}$$
+
+*Here, first specify the size of the effect by computing it as the estimate for a medium effect size. The value for u should be 3 in this case. Power is set at 0.8. After running the test, we could get the value of v. And then we could compute the sample size needed, which is 77.*
+```{r}
+
+# Load required libraries.
+library(pwr)
+library(dplyr)
+
+# Generate value for f2.
+pwr::cohen.ES("f2", "medium")
+
+# Power analysis.
+pwr.f2.test(u = 3, v = NULL, f2 = .15, power = .8)
+
+# Compute the sample size required with formula"n=u+v(the closet integer on the right)+1", where "n" is the sample size needed.
+nrequired <- 73+1+3
+nrequired
+
+```
+
+After conducting your power analysis, use linear regression to test your hypotheses and produce appropriate visualizations. Discuss the results of your model, both in terms of the model performance and your hypotheses.
+
+**Linear Regression Model**
+
+**Select efficiency, innovation, and supports as the independent variables, select effect as the dependent variable.**
+
+*Interpretation of the results: First of all, looking at the p-values for each independent variables - they are extremely small when compared with the 0.05 threshold. Thus, we could reject all the three null hypothese listed above, which are (1) Whether doing better in efficiency or not does not have an impact on a leader's effectiveness; (2) Whether doing better in innovation or not does not have an impact on a leader's effectiveness.; (3) Whether doing better in supporting or not does not have an impact on a leader's effectiveness. To see the direction of how these three independent variables impact the dependent variable respectively, we could look at the estimate coefficients: around 0.2304 for efficiency; around 0.5219 for innovation; around 0.4343 for supports. Judged from this perspective, we could say that though all the three variables have positive impact on variable "effect", innovation has the "biggest" impact when it comes to scale. Conversely, efficiency has the "smallest" impact. Looking at the adjusted R-squared, it is roughly 0.1019. Since there is not a rule-of-thumb to judge if the adjusted R-squared is good/high enough, and the fact that this study is based on human behavior indicates it is reasonable that the adjusted R-squared falls below 0.5, so we could not determine this is a good or bad number with absolute certainty. More detailed information of the context should be provided in order to see if this number is good enough. One possible solution for this concern would be comparing with similar (and hopefully successful) studies and see if the R-squared's are on a par with each other.*
+```{r}
+
+# Linear regression model. 
+mod1 <- lm(effect ~ efficiency + innovation + supports, data = teamPerc)
+
+summary(mod1)
+
+```
+
+**Regression Diagnosis Plots**
+
+*(1) Residuals vs. Fitted Values Plot: since there is a distinctive pattern shown here, something close to a parabola but not quite - this non-linear relationship was not explained by the model and was left out in the residuals.*
+
+*(2) Normal Q-Q Plot: since the residuals are not lined well on a straight line (not even close) - this indicates the residuals might not be normally distributed.*
+
+*(3) Scale-Location Plot: as this plot shows if residuals are spread equally along the ranges of predictors, we could check the assumption of equal variance (homoscedasticity) here. In this plot, it does not seem to be a horizontal line with equally (randomly) spread points, the model might have problem with homoscedasticity.*
+
+*(4) Residuals vs. Leverage Plot: Cook's distance could barely be seen - this indicates that this model might not have problems with outliers.*
+```{r}
+
+plot(mod1)
+
+```
+
+**Visualizations**
+
+*The graphs below could verify the interpretation above as the slope in the graph of innovation vs. effect appears steeper, the slope in the graph of supports vs. effect comes next, and the slope in the graph of efficiency vs. effect is the flattest.*
+```{r}
+
+# Load required library.
+library(gridExtra)
+library(ggplot2)
+
+# Plot for effect vs. efficiency.
+p1 <- ggplot(teamPerc) + 
+  geom_smooth(method = lm, aes(efficiency, effect))
+
+# Plot for effect vs. innovation.
+p2 <- ggplot(teamPerc) + 
+  geom_smooth(method = lm, aes(innovation, effect))
+
+# Plot for effect vs. supports.
+p3 <- ggplot(teamPerc) +
+  geom_smooth(method = lm, aes(supports, effect))
+
+# Put all three plots altogether.
+grid.arrange(p1, p2, p3, nrow = 2)
+
+```
+
+
+
+### Silver
+Conduct any form of resampling and discuss the output from your resampled results. How does the resultant distribution help to support your hypotheses?
+
+**Conduct Boostrapping, which is basically sampling with replacement.**
+
+*One of the advantages of boostrapping is that the underlying distribution of the variables does not need to be normal.*
+```{r}
+
+# Select variables.
+modelVars <- dplyr::select(teamPerc, effect, efficiency, innovation, supports)
+
+# Bootstrapping.
+bootstrapping <- function(df) {
+  df <- df
+  sampledRows <- sample(1:nrow(df), nrow(df), replace = TRUE)
+  df <- df[sampledRows, ]
+  bsMod <- lm(effect ~ efficiency + innovation + supports, data = df)
+  results <- broom::tidy(bsMod)
+  return(results)
+}
+
+bootstrapping(modelVars)
+
+bsRep <- replicate(1000, bootstrapping(modelVars), simplify = FALSE)
+
+bsCombined <- do.call("rbind", bsRep)
+
+```
+
+(1) For variable "efficiency" and the t-value.
+```{r}
+
+# Find the 95% confidence interval.
+meanEffect1 <- mean(bsCombined$statistic[bsCombined$term == "efficiency"])
+
+ciUpper1 <- quantile(bsCombined$statistic[bsCombined$term == "efficiency"], .975)
+
+ciLower1 <- quantile(bsCombined$statistic[bsCombined$term == "efficiency"], .025)
+
+h1 <- hist(bsCombined$statistic[bsCombined$term == "efficiency"], col = "slategray1")
+
+abline(v = summary(mod1)$coefficients["efficiency","t value"], col = "goldenrod4", lwd = 2)
+
+abline(v = ciUpper1, col = "sienna3", lwd = 2)
+
+abline(v = ciLower1, col = "sienna3", lwd = 2)
+
+abline(v = meanEffect1, col = "sienna3", lwd = 2)
+
+```
+
+(2) For variable "innovation" and the t-value.
+```{r}
+
+# Find the 95% confidence interval.
+meanEffect2 <- mean(bsCombined$statistic[bsCombined$term == "innovation"])
+
+ciUpper2 <- quantile(bsCombined$statistic[bsCombined$term == "innovation"], .975)
+
+ciLower2 <- quantile(bsCombined$statistic[bsCombined$term == "innovation"], .025)
+
+h2 <- hist(bsCombined$statistic[bsCombined$term == "innovation"], col = "slategray1")
+
+abline(v = summary(mod1)$coefficients["innovation","t value"], col = "goldenrod4", lwd = 2)
+
+abline(v = ciUpper2, col = "sienna3", lwd = 2)
+
+abline(v = ciLower2, col = "sienna3", lwd = 2)
+
+abline(v = meanEffect2, col = "sienna3", lwd = 2)
+
+```
+
+(3) For variable "supports" and the t-value.
+```{r}
+
+# Find the 95% confidence interval.
+meanEffect3 <- mean(bsCombined$statistic[bsCombined$term == "supports"])
+
+ciUpper3 <- quantile(bsCombined$statistic[bsCombined$term == "supports"], .975)
+
+ciLower3 <- quantile(bsCombined$statistic[bsCombined$term == "supports"], .025)
+
+h3 <- hist(bsCombined$statistic[bsCombined$term == "supports"], col = "slategray1")
+
+abline(v = summary(mod1)$coefficients["supports","t value"], col = "goldenrod4", lwd = 2)
+
+abline(v = ciUpper3, col = "sienna3", lwd = 2)
+
+abline(v = ciLower3, col = "sienna3", lwd = 2)
+
+abline(v = meanEffect3, col = "sienna3", lwd = 2)
+
+```
+
+(4) For variable "efficiency" and the estimate. 
+```{r}
+
+meanEffect4 <- mean(bsCombined$estimate[bsCombined$term == "efficiency"])
+
+ciUpper4 <- quantile(bsCombined$estimate[bsCombined$term == "efficiency"], .975)
+
+ciLower4 <- quantile(bsCombined$estimate[bsCombined$term == "efficiency"], .025)
+
+h4 <- hist(bsCombined$estimate[bsCombined$term == "efficiency"], col = "slategray1")
+
+abline(v = summary(mod1)$coefficients["efficiency","Estimate"], col = "goldenrod4", lwd = 2)
+
+abline(v = ciUpper4, col = "sienna3", lwd = 2)
+
+abline(v = ciLower4, col = "sienna3", lwd = 2)
+
+abline(v = meanEffect4, col = "sienna3", lwd = 2)
+
+```
+
+(5) For variable "innovation" and the estimate. 
+```{r}
+
+meanEffect5 <- mean(bsCombined$estimate[bsCombined$term == "innovation"])
+
+ciUpper5 <- quantile(bsCombined$estimate[bsCombined$term == "innovation"], .975)
+
+ciLower5 <- quantile(bsCombined$estimate[bsCombined$term == "innovation"], .025)
+
+h5 <- hist(bsCombined$estimate[bsCombined$term == "innovation"], col = "slategray1")
+
+abline(v = summary(mod1)$coefficients["innovation","Estimate"], col = "goldenrod4", lwd = 2)
+
+abline(v = ciUpper5, col = "sienna3", lwd = 2)
+
+abline(v = ciLower5, col = "sienna3", lwd = 2)
+
+abline(v = meanEffect5, col = "sienna3", lwd = 2)
+
+```
+
+(6) For variable "supports" and the estimate. 
+```{r}
+
+meanEffect6 <- mean(bsCombined$estimate[bsCombined$term == "supports"])
+
+ciUpper6 <- quantile(bsCombined$estimate[bsCombined$term == "supports"], .975)
+
+ciLower6 <- quantile(bsCombined$estimate[bsCombined$term == "supports"], .025)
+
+h6 <- hist(bsCombined$estimate[bsCombined$term == "supports"], col = "slategray1")
+
+abline(v = summary(mod1)$coefficients["supports","Estimate"], col = "goldenrod4", lwd = 2)
+
+abline(v = ciUpper6, col = "sienna3", lwd = 2)
+
+abline(v = ciLower6, col = "sienna3", lwd = 2)
+
+abline(v = meanEffect6, col = "sienna3", lwd = 2)
+
+```
+
+**Conclusion**
+
+*For variable efficiency, 95% of the intervals contain the true t-value that is somewhere between (approximately) 7.5 and 13.75. For extra information and added clarity, compute the second plot and see that we could have 95% of the intervals contain the coefficient (approximately) between 0.17 and 0.285. *
+
+*For variable innovation, 95% of the intervals contain the true t-value that is somewhere between (approximately) 26.2 and 32.5. For extra information and added clarity, compute the second plot and see that we could have 95% of the intervals contain the coefficient (approximately) between 0.465 and 0.575. *
+
+*For variable supports, 95% of the intervals contain the true t-value that is somewhere between (approximately) 26.75 and 33. For extra information and added clarity, compute the second plot and see that we could have 95% of the intervals contain the coefficient (approximately) between 0.38 and 0.475. *
+
+*Since the t-values for the three variables are more than 1.96, which is the threshold, along with the t-value distribution and the distribution of the coefficients, I am pretty confident to say that doing well in efficiency, innovation, and supports would impact whether a leader is effective or not.*
+
+
+
+### Gold
+Consider any potential problems of your original regression model(s). Were there any observations exhibiting leverage? How sure are you about the standard errors? Identify one specific issue and revise your model strategy to help allieviate that issue.
+
+*Again, the regression diagnosis plots.*
+```{r}
+
+# Plot.
+plot(mod1)
+
+```
+
+*Perform the Breusch-Pagan test. Here, the null hypothesis would be that residuals are constant. Since the p-value is extremely small, we could reject this null. Baesd on this evidence along with the residuals vs. fitted values plot from above, we could say that it is very likely that the model has the problem of heteroscedasticity.*
+```{r}
+
+# Load required library.
+library(lmtest)
+
+# Run the Breusch-Pagan test.
+bptest(mod1)
+
+```
+
+*Now compute the variance-covariance matrix. And then test the coefficients of the model again. Here, using a heteroscedasticity-consistent covariance matrix to test the coefficients generates more reasonable estimates. After comparing the coefficients shown below and the original ones, we could see that the standard errors increase, which are the "real" standard errors.*
+```{r}
+
+# Load required library.
+library(sandwich)
+
+# Compute the vcov matrix.
+vcovHC(mod1)
+
+# Test coefficients using a heteroscedasticity-consistent covariance matrix.
+lmtest::coeftest(mod1, vcov = vcovHC)
+
+```
